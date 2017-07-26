@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> is bug$</title>
+    <style>
+        #box1 {
+            border: 1px solid #45a0ff;
+            margin-left: 400px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="box1" width="800" height="800"></canvas>
+</body>
+<script>
+    var box1 = document.getElementById("box1");
+    var tex1 = box1.getContext("2d");
+     function Clocks(opt) {
+         for(var key in opt){
+             this[key]=opt[key];
+         }
+         this.init();
+     }
+     Clocks.prototype = {
+         constructor:Clocks,
+         //函数初始化
+         init:function () {
+             var that = this;
+            setInterval(function () {
+                tex1.clearRect(0,0,box1.width,box1.height);
+                var times = new Date();
+                that.bigRound();
+                var arrs = that.marks();
+                that.scaleLine(arrs);
+                that.runLine(times);
+            },1000);
+         },
+         //先画一个大圆
+         bigRound:function () {
+           tex1.beginPath();
+           tex1.arc(this.bigX,this.bigY,this.bigR,0,Math.PI*2);
+           tex1.stroke();
+         },
+         //计算算出所有的刻度的起始坐标和终点坐标
+         marks:function () {
+           //创建一个起始弧度
+           var qDian = -Math.PI/2;
+           //创建一个数组来存放，每个刻度的起始坐标和终点坐标
+           var arr = [];
+           //计算出每个刻度的弧度差
+           var degs = 2*Math.PI/60;
+           //申明一个时间数字变量
+             var index = 0 ;
+                for(var i = 0 ;i < 60;i++){
+                    if(i%5==0){
+                        arr.push({
+                            qiX:Math.cos(qDian+degs*i)*this.bigR,
+                            qiY:Math.sin(qDian+degs*i)*this.bigR,
+                            zX:Math.cos(qDian+degs*i)*(this.bigR-this.thickL) ,
+                            zY:Math.sin(qDian+degs*i)*(this.bigR-this.thickL),
+                            zW:this.thickW,
+                            time:{
+                                math:index++ || 12,
+                                tX:Math.cos(qDian+degs*i)*(this.bigR-this.thickL-20) ,
+                                tY:Math.sin(qDian+degs*i)*(this.bigR-this.thickL-20)
+                            }
+                        })
+                    }else {
+                        arr.push({
+                            qiX:Math.cos(qDian+degs*i)*this.bigR,
+                            qiY:Math.sin(qDian+degs*i)*this.bigR,
+                            zX:Math.cos(qDian+degs*i)*(this.bigR-this.thinL) ,
+                            zY:Math.sin(qDian+degs*i)*(this.bigR-this.thinL),
+                            zW:this.thisW
+                        })
+                    }
+                }
+//             console.dir(arr);
+             return arr;
+         },
+         //绘制出所有的刻度线
+         scaleLine:function (arrs) {
+             arrs.forEach(function (t) {
+                 if(t["time"]){
+                     tex1.font="30px 微软雅黑";
+                     tex1.textAlign="center";
+                     tex1.textBaseline="middle";
+                     tex1.fillText(t["time"]["math"],this.bigX+t["time"]["tX"],this.bigY+t["time"]["tY"]);
+                 }
+                 tex1.beginPath();
+                 tex1.lineWidth=t["zW"];
+                 tex1.moveTo(this.bigX+t["qiX"],this.bigY+t["qiY"]);
+                 tex1.lineTo(this.bigX+t["zX"],this.bigY+t["zY"]);
+                 tex1.stroke();
+
+             },this);
+         },
+         //绘制出时、分、秒的刻度
+         runLine:function (times) {
+//             console.log(times.toLocaleString());
+             var tRrrs = [times.getHours()%12,times.getMinutes(),times.getSeconds()];
+//             console.log(tRrrs);
+             //用一个数组在存储时、分、秒指针的坐标数据
+              var timeArr = [];
+              for(var k = 0;k<this.timeDate.length;k++){
+                  if(k>0){
+                      timeArr.push({
+                          timeX:Math.cos(2*Math.PI/60*tRrrs[k]-(Math.PI/2))*this.timeDate[k]["length"],
+                          timeY:Math.sin(2*Math.PI/60*tRrrs[k]-(Math.PI/2))*this.timeDate[k]["length"],
+                          timeW:this.timeDate[k]["width"],
+                          color:this.timeDate[k]["color"]
+                      })
+                  }else {
+                      timeArr.push({
+                          timeX:Math.cos(2*Math.PI/12*tRrrs[k]-(Math.PI/2))*this.timeDate[k]["length"],
+                          timeY:Math.sin(2*Math.PI/12*tRrrs[k]-(Math.PI/2))*this.timeDate[k]["length"],
+                          timeW:this.timeDate[k]["width"],
+                          color:this.timeDate[k]["color"]
+                      })
+                  }
+              }
+             timeArr.forEach(function (t) {
+                 tex1.beginPath();
+                 tex1.save();
+                 tex1.lineWidth=t["timeW"];
+                 tex1.strokeStyle=t["color"];
+                 tex1.lineCap="round";
+                 tex1.moveTo(this.bigX,this.bigY);
+                 tex1.lineTo(this.bigX+t["timeX"],this.bigY+t["timeY"]);
+                 tex1.stroke();
+                 tex1.restore();
+             },this)
+         }
+     };
+      new Clocks({
+          bigX:400,       //时钟的中心点X
+          bigY:400,       //时钟的中心点Y
+          bigR:300,       //时钟的半径
+          thinL:15,       //细刻度的长度
+          thisW:2,        //细刻度的宽
+          thickL:26,      //粗刻度的长度
+          thickW:6,       //粗刻度的宽
+          timeDate:[{
+              length:80,
+              width:14,
+              color:"green"
+          },{
+              length:140,
+              width:8,
+              color:"black"
+          },{
+              length:250,
+              width:2,
+              color:"red"
+          }]
+      });
+
+
+
+</script>
+</html>
